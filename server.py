@@ -3,7 +3,6 @@ Flask web app that exposes a restful API to obs
 
 """
 import datetime
-import json
 import uuid
 
 import flask.json
