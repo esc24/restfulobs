@@ -3,9 +3,12 @@ Flask web app that exposes a restful API to obs
 
 """
 import datetime
+import json
 import uuid
 
-from flask import Flask, request, jsonify, _request_ctx_stack
+import flask.json
+from flask import Flask, request, jsonify, _request_ctx_stack, g
+import redis
 
 from jwtauth import requires_auth, handle_error
 
@@ -27,6 +30,28 @@ obs = [
 ]
 
 
+def get_db():
+    db = getattr(g, 'db', None)
+    if db is None:
+        db = g.db = redis.Redis(host='127.0.0.1',
+                                port=6379,
+                                db=0)
+    return db
+
+
+def init_db():
+    db = get_db()
+    for ob in obs:
+        db.set(ob['uid'], flask.json.dumps(ob))
+
+
+@app.cli.command('init_db')
+def init_db_command():
+    """Initializes the database."""
+    init_db()
+    print('Initialized the database.')
+
+
 # Controllers API
 @app.route("/ping")
 def ping():
@@ -41,22 +66,20 @@ def securedPing():
 
 @app.route('/v1/obs/', methods=['GET'])
 def get_obs():
-    return jsonify({'obs': obs})
+    db = get_db()
+    obs = [flask.json.loads(db.get(key)) for key in db.keys()]
+    return jsonify(dict(obs=obs))
 
 
 @app.route('/v1/obs/<uid>', methods=['GET'])
 def get_ob(uid):
-    matching = [ob for ob in obs if str(ob['uid']) == uid]
-    if not matching:
+    ob = get_db().get(uid)
+    if ob is None:
         return handle_error({'code': 'unknown_resource',
                              'description': 'Specified id is not recognised'},
                             404)
-    if len(matching) != 1:
-        return handle_error({'code': 'multiple_resources',
-                             'description': 'Specified uid matches \
-                                             multiple resources'},
-                            400)
-    return jsonify({'obs': matching[0]})
+    ob = flask.json.loads(ob)
+    return jsonify({'obs': ob})
 
 
 @app.route('/v1/obs/', methods=['POST'])
