@@ -19,9 +19,9 @@ docker
 
 Build:
 
-    docker build -t username/jwttut:latest .
+    docker build -t username/restfulobs:latest .
 
 Run:
 
-    docker run -p 5000:5000 --env-file .env username/jwttut
+    docker run -p 5000:5000 --env-file .env username/restfulobs
 
