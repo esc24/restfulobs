@@ -23,5 +23,10 @@ Build:
 
 Run:
 
-    docker run -p 5000:5000 --env-file .env username/restfulobs
+    docker run --name some-redis -v /docker/volumes/data:/data -d redis:alpine
+    docker run --link some-redis:redis -p 5000:5000 --env-file .env username/restfulobs
+
+Debug redis:
+
+    docker run --link some-redis:redis -it redis redis-cli -h redis -p 6379
 

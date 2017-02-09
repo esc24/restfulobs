@@ -32,7 +32,7 @@ obs = [
 def get_db():
     db = getattr(g, 'db', None)
     if db is None:
-        db = g.db = redis.Redis(host='127.0.0.1',
+        db = g.db = redis.Redis(host='redis',
                                 port=6379,
                                 db=0)
     return db
@@ -78,7 +78,7 @@ def get_ob(uid):
                              'description': 'Specified id is not recognised'},
                             404)
     ob = flask.json.loads(ob)
-    return jsonify({'obs': ob})
+    return jsonify({'ob': ob})
 
 
 @app.route('/v1/obs/', methods=['POST'])
@@ -87,13 +87,19 @@ def create_ob():
         return handle_error({'code': 'ilformed_payload',
                              'description': 'Missing weight from observation'},
                             400)
+
     ob = {
         'uid': uuid.uuid4(),
-        #'datetime': request.json['datetime'],
-        'weight': request.json['weight']  # Add validation on insert
+        #TODO add datetime validation if key present
+        'datetime': request.json.get('datetime',
+                                     datetime.datetime.now().isoformat()),
+        'weight': request.json['weight']  #TODO Add validation on insert
     }
-    obs.append(ob)
-    return jsonify({'obs': ob}), 201
+    #obs.append(ob)
+    key = ob['uid']
+    value = flask.json.dumps(ob)
+    get_db().set(key, value)
+    return jsonify({'ob': ob}), 201
 
 
 if __name__ == "__main__":

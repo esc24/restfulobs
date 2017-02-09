@@ -9,4 +9,4 @@ WORKDIR /opt/app
 EXPOSE 5000
 ENV FLASK_APP="server.py"
 ENTRYPOINT ["flask", "run"]
-CMD ["--host=0.0.0.0"]
+CMD ["--host=0.0.0.0", "--with-threads"]
