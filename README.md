@@ -1,5 +1,11 @@
 
 GET request to http://localhost:5000/v1/obs
+POST request example:
+
+    curl -H "Content-Type: application/json" -X POST -d '{"weight": 78.0}' http://localhost:5000/v1/obs/
+
+
+
 
 local install
 -------------
