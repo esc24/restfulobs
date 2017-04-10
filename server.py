@@ -7,7 +7,9 @@ import uuid
 
 import flask.json
 from flask import Flask, request, jsonify, _request_ctx_stack, g
+from flask_cors import cross_origin
 import redis
+import dateutil.parser
 
 from jwtauth import requires_auth, handle_error
 
@@ -32,7 +34,7 @@ obs = [
 def get_db():
     db = getattr(g, 'db', None)
     if db is None:
-        db = g.db = redis.Redis(host='redis',
+        db = g.db = redis.StrictRedis(host='redis',
                                 port=6379,
                                 db=0)
     return db
@@ -64,6 +66,7 @@ def securedPing():
 
 
 @app.route('/v1/obs/', methods=['GET'])
+@cross_origin()
 def get_obs():
     db = get_db()
     obs = [flask.json.loads(db.get(key)) for key in db.keys()]
@@ -81,6 +84,23 @@ def get_ob(uid):
     return jsonify({'ob': ob})
 
 
+def iso_datetime(dt_str):
+    """
+    Converts the given string to iso format.
+
+    Returns:
+        Valid datetime as an iso formatted string, otherwise None.
+
+    """
+    try:
+        dt = dateutil.parser.parse(dt_str)
+        dt_str = dt.isoformat()
+    except (ValueError, AttributeError, TypeError):
+        dt_str = None  # Should probably raise an exception here.
+
+    return dt_str
+
+
 @app.route('/v1/obs/', methods=['POST'])
 def create_ob():
     if not request.json or not 'weight' in request.json:
@@ -90,12 +110,10 @@ def create_ob():
 
     ob = {
         'uid': uuid.uuid4(),
-        #TODO add datetime validation if key present
-        'datetime': request.json.get('datetime',
-                                     datetime.datetime.now().isoformat()),
-        'weight': request.json['weight']  #TODO Add validation on insert
+        'datetime': iso_datetime(request.json.get('datetime')) or \
+            datetime.datetime.now().isoformat(),
+        'weight': request.json['weight']
     }
-    #obs.append(ob)
     key = ob['uid']
     value = flask.json.dumps(ob)
     get_db().set(key, value)

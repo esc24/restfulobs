@@ -34,5 +34,5 @@ Run:
 
 Debug redis:
 
-    docker run --link some-redis:redis -it redis redis-cli -h redis -p 6379
+    docker run --link some-redis:redis -it --net restfulobs_default redis redis-cli -h redis -p 6379
 
