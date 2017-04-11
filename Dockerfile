@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM resin/rpi-raspbian:latest
 MAINTAINER Ed Campbell <email@email.com>
 RUN apt-get update && apt-get install -y python-pip python-dev
 COPY ./requirements.txt /tmp/requirements.txt
